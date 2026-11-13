@@ -2,7 +2,7 @@
 
 Base path: `/api/v1`
 
-Only the health, read-only master-data, CSV import, dashboard analytics, and sales-list endpoints are exposed at this stage. Alert routers exist in the repository for a later build phase and are intentionally not wired.
+Only the health, read-only master-data, CSV import, dashboard analytics, sales-list, and alert/anomaly-detection endpoints are exposed at this checkpoint (Phases A–D / T01–T09).
 
 ## Health
 
@@ -369,6 +369,146 @@ Not part of the versioned API. Returns pointers for convenience.
 }
 ```
 
-## Planned endpoints (not exposed yet)
+## Alerts & Anomaly Detection
 
-The build pack defines later alert endpoints. They will be added in the detection/alert phase with typed request/response schemas and tests.
+### `POST /api/v1/alerts/run-detection`
+
+Evaluates month-over-month sales changes for each brand-region pair and creates or refreshes explainable alerts based on active anomaly rules.
+
+Request body:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `month` | string | Yes | Target calendar month in `YYYY-MM` format |
+
+**200**
+
+```json
+{
+  "evaluated_combinations": 20,
+  "alerts_created": 4,
+  "alerts_updated": 0
+}
+```
+
+- Pairs with zero or missing baseline in the prior calendar month are skipped.
+- Pairs where prior month revenue is below `minimum_baseline` (₹10,000 default) are skipped.
+- Missing current month data is skipped (not treated as −100%).
+- Detection is idempotent: running repeatedly on the same month does not duplicate alerts. If an existing alert is still `OPEN`, its values and explanation are refreshed (counted as `alerts_updated`). Alerts in other statuses (`INVESTIGATING`, `RESOLVED`, `DISMISSED`) are left untouched.
+
+**400** — month format validation error or missing required date range.
+
+**422** — schema validation error (e.g. invalid month string `YYYY-MM`).
+
+### `GET /api/v1/alerts`
+
+Paginated, filtered alert list, ordered newest first (`created_at desc, id desc`).
+
+Query parameters:
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `status` | string | `null` | Filter by status (`OPEN`, `INVESTIGATING`, `RESOLVED`, `DISMISSED`) |
+| `severity` | string | `null` | Filter by severity (`LOW`, `MEDIUM`, `HIGH`) |
+| `brand_id` | integer | `null` | Filter by brand ID (`>= 1`) |
+| `region_id` | integer | `null` | Filter by region ID (`>= 1`) |
+| `start_date` | date | `null` | Filter alert periods overlapping on or after `YYYY-MM-DD` |
+| `end_date` | date | `null` | Filter alert periods overlapping on or before `YYYY-MM-DD` |
+| `page` | integer | `1` | Page number (`>= 1`) |
+| `page_size` | integer | `20` | Items per page (`1–100`) |
+
+**200**
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "brand_id": 1,
+      "brand_name": "Cardioval",
+      "region_id": 1,
+      "region_name": "Chennai",
+      "rule_id": 1,
+      "rule_name": "Revenue decline month over month",
+      "metric": "revenue",
+      "period_start": "2026-10-01",
+      "period_end": "2026-10-31",
+      "previous_value": 265518.26,
+      "current_value": 164621.32,
+      "change_pct": -38.0,
+      "severity": "HIGH",
+      "status": "OPEN",
+      "explanation": "Revenue for Cardioval in Chennai changed from ₹2,65,518.26 to ₹1,64,621.32, a decrease of 38.00%. This crossed the configured decline threshold of 20.00%.",
+      "decline_threshold_pct": 20.0,
+      "growth_threshold_pct": 99999.0,
+      "comparison_period": "month_over_month",
+      "created_at": "2026-11-13T20:18:29.000000Z",
+      "updated_at": "2026-11-13T20:18:29.000000Z"
+    }
+  ],
+  "total": 4,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+**400** — `start_date` is after `end_date`.
+
+**422** — invalid status/severity enum or pagination out of range.
+
+### `GET /api/v1/alerts/{alert_id}`
+
+Retrieves full alert details including rule configuration and thresholds.
+
+**200** — returns full `AlertListItem` object (same structure as above).
+
+**404** — alert not found:
+
+```json
+{
+  "detail": "Alert not found"
+}
+```
+
+### `PATCH /api/v1/alerts/{alert_id}`
+
+Updates an alert's status. Updates `updated_at` timestamp.
+
+Request body:
+
+```json
+{
+  "status": "INVESTIGATING"
+}
+```
+
+Allowed status values: `OPEN`, `INVESTIGATING`, `RESOLVED`, `DISMISSED`.
+
+**200** — returns updated `AlertListItem` object.
+
+**404** — alert not found.
+
+**422** — invalid status enum value.
+
+### `GET /api/v1/alerts/summary`
+
+Returns aggregate alert counts grouped by severity and by status.
+
+**200**
+
+```json
+{
+  "total": 4,
+  "by_severity": {
+    "LOW": 0,
+    "MEDIUM": 2,
+    "HIGH": 2
+  },
+  "by_status": {
+    "OPEN": 4,
+    "INVESTIGATING": 0,
+    "RESOLVED": 0,
+    "DISMISSED": 0
+  }
+}
+```

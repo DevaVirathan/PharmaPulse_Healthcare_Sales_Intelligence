@@ -4,7 +4,7 @@ Independent pharmaceutical sales intelligence POC. The target workflow is:
 
 > Upload CSV → validate → store → analyze → detect unusual changes → review alerts.
 
-This repository currently contains the **backend foundation, database, seed data, synthetic dataset, CSV ingestion, and analytics** checkpoint (build-pack tasks **T01–T06**). The React frontend is intentionally deferred until the backend/database path is confirmed.
+This repository currently contains the **backend foundation, database, seed data, synthetic dataset, CSV ingestion, analytics, and anomaly detection / alert management** checkpoint (build-pack tasks **T01–T09**). The React frontend is intentionally deferred until the backend/database path is confirmed.
 
 > **Data safety:** Use synthetic or explicitly approved de-identified data only. This POC must never connect to a production KAM system or store patient data, credentials, or sensitive personal data.
 
@@ -21,7 +21,9 @@ This repository currently contains the **backend foundation, database, seed data
 | T05 — CSV import API | ✅ Complete | Transactional upload, partial acceptance, duplicate detection, import history, 24 import tests |
 | T06 — Analytics APIs | ✅ Complete | Summary, monthly trend, brand/region performance, filtered sales list, 25 analytics tests |
 | T07 — Analytics correctness audit | ✅ Complete | Audit coverage for inclusive dates, prior-period logic, zero baselines, pagination stability, and documented business assumptions |
-| T08+ — Detection, alerts, UI | ⏸ Staged / not wired | Alert modules exist in the repo for later phases but are not exposed yet |
+| T08 — Anomaly detection engine | ✅ Complete | Explainable MoM detection, idempotent runs, 19 detection and acceptance tests |
+| T09 — Alert management API | ✅ Complete | Paginated/filtered alert browsing, status transitions, summary counts, 25 management tests |
+| T10+ — Frontend UI | ⏸ Next phase | App shell, dashboards, analytics, alerts, and upload pages |
 
 **Exposed API in this checkpoint**
 
@@ -37,6 +39,11 @@ This repository currently contains the **backend foundation, database, seed data
 - `GET /api/v1/dashboard/brand-performance` → revenue, units, change per brand
 - `GET /api/v1/dashboard/region-performance` → revenue, units, change per region
 - `GET /api/v1/sales` → filtered, paginated sales rows
+- `POST /api/v1/alerts/run-detection` → trigger MoM anomaly detection for a calendar month
+- `GET /api/v1/alerts` → filtered, paginated alert list
+- `GET /api/v1/alerts/{alert_id}` → full alert details including rule thresholds
+- `PATCH /api/v1/alerts/{alert_id}` → update alert status (`OPEN`, `INVESTIGATING`, `RESOLVED`, `DISMISSED`)
+- `GET /api/v1/alerts/summary` → aggregate counts by severity and status
 
 Interactive docs: `http://localhost:8000/docs`
 
