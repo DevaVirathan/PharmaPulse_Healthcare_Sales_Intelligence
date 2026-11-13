@@ -4,7 +4,7 @@ Independent pharmaceutical sales intelligence POC. The target workflow is:
 
 > Upload CSV → validate → store → analyze → detect unusual changes → review alerts.
 
-This repository currently contains the **backend foundation, database, seed data, synthetic dataset, CSV ingestion, analytics, and anomaly detection / alert management** checkpoint (build-pack tasks **T01–T09**). The React frontend is intentionally deferred until the backend/database path is confirmed.
+This repository currently contains the **full-stack application** checkpoint (build-pack tasks **T01–T15**), including the **backend foundation, PostgreSQL database, seed data, synthetic dataset, CSV ingestion, analytics engine, anomaly detection engine, alert management API, and the React + Vite frontend application**.
 
 > **Data safety:** Use synthetic or explicitly approved de-identified data only. This POC must never connect to a production KAM system or store patient data, credentials, or sensitive personal data.
 
@@ -14,7 +14,7 @@ This repository currently contains the **backend foundation, database, seed data
 
 | Build-pack task | Status | Notes |
 |---|---|---|
-| T01 — Project foundation | ✅ Backend complete; frontend deferred | FastAPI app, API v1 router, settings, CORS, health endpoint, env examples, `.gitignore` |
+| T01 — Project foundation | ✅ Complete | FastAPI app, API v1 router, settings, CORS, health endpoint, env examples, `.gitignore` |
 | T02 — Database connectivity and migrations | ✅ Complete | SQLAlchemy engine/session, Alembic migration applied, readiness endpoint verified against local PostgreSQL |
 | T03 — Models, migration, seed data | ✅ Complete | Full schema, idempotent seed, brands/regions endpoints, constraint tests |
 | T04 — Synthetic dataset generator | ✅ Complete | Deterministic 240-row CSV, seeded decline/growth events, reproducibility + contract tests |
@@ -23,7 +23,13 @@ This repository currently contains the **backend foundation, database, seed data
 | T07 — Analytics correctness audit | ✅ Complete | Audit coverage for inclusive dates, prior-period logic, zero baselines, pagination stability, and documented business assumptions |
 | T08 — Anomaly detection engine | ✅ Complete | Explainable MoM detection, idempotent runs, 19 detection and acceptance tests |
 | T09 — Alert management API | ✅ Complete | Paginated/filtered alert browsing, status transitions, summary counts, 25 management tests |
-| T10+ — Frontend UI | ⏸ Next phase | App shell, dashboards, analytics, alerts, and upload pages |
+| T10 — App shell & design system | ✅ Complete | Responsive sidebar, header, navigation, professional healthcare-BI styling, reusable Button/Table/Badge/Card/Modal/Spinner/Empty/Error components |
+| T11 — Overview dashboard | ✅ Complete | KPI cards, monthly trend line chart, brand/region bar charts, recent high-priority alerts, last import timestamp, global date filters |
+| T12 — Sales Analytics workspace | ✅ Complete | Brand, region, date filters with active chips, trend chart, comparison tables, paginated granular sales table |
+| T13 — Upload Data page | ✅ Complete | Drag-and-drop CSV upload, contract guidance, upload progress, partial acceptance results, 409 duplicate handling |
+| T14 — Alerts management page | ✅ Complete | Summary count cards, status/severity filters, detail inspection modal with factual explanations, status transition controls, interactive "Run Detection" modal |
+| T15 — Import History page | ✅ Complete | Ingestion logs table, row counts, validation error detail modal with 100-error truncation note |
+| T16+ — Quality & E2E review | ⏸ Next phase | Full end-to-end integration flow and security review |
 
 **Exposed API in this checkpoint**
 
@@ -364,7 +370,34 @@ No credentials or stack traces are returned.
 
 ---
 
-## 9. Explore analytics
+## 9. Run the Frontend (React + Vite)
+
+In a separate terminal window:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite dev server will start on `http://localhost:5173`. Open it in your browser to access the PharmaPulse interface:
+
+* **Overview Dashboard:** `http://localhost:5173/`
+* **Sales Analytics Workspace:** `http://localhost:5173/analytics`
+* **Anomaly Alerts:** `http://localhost:5173/alerts`
+* **Upload Sales Data:** `http://localhost:5173/upload`
+* **Import History & Audit:** `http://localhost:5173/imports`
+
+To build for production:
+
+```powershell
+cd frontend
+npm run build
+```
+
+---
+
+## 10. Explore analytics
 
 With the API running and the sample CSV imported:
 
@@ -470,11 +503,9 @@ T01–T05 tests cover:
 
 ## Known limitations (this checkpoint)
 
-- No frontend yet.
-- No authentication or role-based access control.
+- No authentication or role-based access control (open demo endpoints).
 - Master data is read-only; there are no create/update endpoints in the POC.
-- CSV imports are exposed; dashboard, sales, and alert endpoints are still staged.
-- Alerts and thresholds are stored but detection is not yet part of the running API.
-- Demo thresholds are not validated business rules.
-- Synthetic data only; no patient or production KAM data.
-- Imported files are stored by hash and name only; the raw CSV bytes are not retained.
+- Demo anomaly detection thresholds (20% decline, 30% growth) are demo defaults, not validated clinical/business rules.
+- Month-over-month anomaly detection evaluates calendar month vs prior calendar month.
+- Synthetic data only; no patient, prescribing clinician, or production KAM data.
+- Imported files are stored by hash and name only; raw CSV bytes are not retained.
