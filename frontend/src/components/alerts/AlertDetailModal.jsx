@@ -67,7 +67,7 @@ export function AlertDetailModal({ alert, isOpen, onClose, onStatusUpdated }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Alert #${alert.id} — ${alert.brand_name} (${alert.region_name})`}
+      title={`Alert ${alert.id} — ${alert.brand_name} (${alert.region_name})`}
       footer={footer}
       maxWidth="680px"
     >

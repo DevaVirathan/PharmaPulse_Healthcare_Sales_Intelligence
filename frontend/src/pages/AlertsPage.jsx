@@ -116,12 +116,17 @@ export function AlertsPage() {
     <div>
       {/* Top Summary KPI Cards */}
       <div className="kpi-grid" style={{ marginBottom: '1.5rem' }}>
-        <div className="kpi-card">
-          <span className="kpi-title">Total Alerts</span>
-          <div className="kpi-value-row">
-            <span className="kpi-value">{summary?.total ?? 0}</span>
+        <div className="kpi-card" style={{ borderLeft: '4px solid #7c3aed' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="kpi-title">Total Alerts</span>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bell size={18} />
+            </div>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <div className="kpi-value-row">
+            <span className="kpi-value" style={{ color: '#4c1d95' }}>{summary?.total ?? 0}</span>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
             Detected anomalies
           </span>
         </div>
@@ -129,14 +134,16 @@ export function AlertsPage() {
         <div className="kpi-card" style={{ borderLeft: '4px solid #ef4444' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span className="kpi-title">High Severity</span>
-            <AlertTriangle size={16} style={{ color: '#ef4444' }} />
+            <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertTriangle size={18} />
+            </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value" style={{ color: '#991b1b' }}>
+            <span className="kpi-value" style={{ color: '#dc2626' }}>
               {summary?.by_severity?.HIGH ?? 0}
             </span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
             Decline anomalies (&ge; 20%)
           </span>
         </div>
@@ -144,14 +151,16 @@ export function AlertsPage() {
         <div className="kpi-card" style={{ borderLeft: '4px solid #f59e0b' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span className="kpi-title">Medium Severity</span>
-            <AlertCircle size={16} style={{ color: '#f59e0b' }} />
+            <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#fffbeb', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AlertCircle size={18} />
+            </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value" style={{ color: '#92400e' }}>
+            <span className="kpi-value" style={{ color: '#d97706' }}>
               {summary?.by_severity?.MEDIUM ?? 0}
             </span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
             Growth anomalies (&ge; 30%)
           </span>
         </div>
@@ -159,14 +168,16 @@ export function AlertsPage() {
         <div className="kpi-card" style={{ borderLeft: '4px solid #0284c7' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span className="kpi-title">Open Queue</span>
-            <Clock size={16} style={{ color: '#0284c7' }} />
+            <div style={{ width: 34, height: 34, borderRadius: '50%', backgroundColor: '#f0f9ff', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Clock size={18} />
+            </div>
           </div>
           <div className="kpi-value-row">
-            <span className="kpi-value" style={{ color: '#075985' }}>
+            <span className="kpi-value" style={{ color: '#0284c7' }}>
               {summary?.by_status?.OPEN ?? 0}
             </span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
             Pending investigation
           </span>
         </div>
@@ -334,7 +345,7 @@ export function AlertsPage() {
             >
               {alerts.items.map((alert) => (
                 <tr key={alert.id}>
-                  <td>#{alert.id}</td>
+                  <td>{alert.id}</td>
                   <td><strong>{alert.brand_name}</strong></td>
                   <td>{alert.region_name}</td>
                   <td style={{ fontSize: '0.8125rem' }}>

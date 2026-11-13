@@ -122,7 +122,7 @@ export function ImportHistoryPage() {
             >
               {imports.items.map((imp) => (
                 <tr key={imp.id}>
-                  <td>#{imp.id}</td>
+                  <td>{imp.id}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontWeight: 600 }}>
                       <FileText size={14} style={{ color: 'var(--color-text-muted)' }} />
@@ -196,7 +196,7 @@ export function ImportHistoryPage() {
         <Modal
           isOpen={Boolean(selectedImport)}
           onClose={() => setSelectedImport(null)}
-          title={`Import #${selectedImport.id} — ${selectedImport.file_name}`}
+          title={`Import ${selectedImport.id} — ${selectedImport.file_name}`}
           maxWidth="700px"
           footer={
             <Button variant="outline" onClick={() => setSelectedImport(null)}>

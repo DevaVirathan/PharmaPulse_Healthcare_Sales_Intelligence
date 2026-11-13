@@ -213,7 +213,7 @@ export function UploadDataPage() {
                     to="/imports"
                     style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'underline' }}
                   >
-                    View existing Import #{duplicateConflict.import_id} in history &rarr;
+                    View existing Import {duplicateConflict.import_id} in history &rarr;
                   </Link>
                 </div>
               )}
@@ -232,7 +232,7 @@ export function UploadDataPage() {
 
       {/* Import Results Panel */}
       {result && (
-        <Card title={`Import Result: #${result.import_id} — ${result.file_name}`}>
+        <Card title={`Import Result: ${result.import_id} — ${result.file_name}`}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <StatusBadge status={result.status} />

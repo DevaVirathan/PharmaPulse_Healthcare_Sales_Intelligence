@@ -25,6 +25,7 @@ export function SalesAnalyticsPage() {
   // Filters
   const [startDate, setStartDate] = useState('2026-01-01');
   const [endDate, setEndDate] = useState('2026-10-31');
+  const [activePreset, setActivePreset] = useState('YTD');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('');
 
@@ -83,9 +84,35 @@ export function SalesAnalyticsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
+  const setPreset = (preset) => {
+    setActivePreset(preset);
+    setPage(1);
+    switch (preset) {
+      case 'YTD':
+        setStartDate('2026-01-01');
+        setEndDate('2026-10-31');
+        break;
+      case 'Q3':
+        setStartDate('2026-07-01');
+        setEndDate('2026-09-30');
+        break;
+      case 'L3M':
+        setStartDate('2026-08-01');
+        setEndDate('2026-10-31');
+        break;
+      case 'ALL':
+        setStartDate('2025-11-01');
+        setEndDate('2026-10-31');
+        break;
+      default:
+        break;
+    }
+  };
+
   const clearAllFilters = () => {
     setStartDate('2026-01-01');
     setEndDate('2026-10-31');
+    setActivePreset('YTD');
     setSelectedBrand('');
     setSelectedRegion('');
     setPage(1);
@@ -99,84 +126,123 @@ export function SalesAnalyticsPage() {
 
   return (
     <div>
-      {/* Filter Bar with Active Chips */}
+      {/* Filter Bar with Presets and Active Chips */}
       <div className="filter-bar">
-        <div className="form-group">
-          <label className="form-label">Start Date</label>
-          <input
-            type="date"
-            className="form-input"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', alignItems: 'flex-end', width: '100%' }}>
+          {/* Quick Period Presets */}
+          <div className="form-group">
+            <label className="form-label">Period Preset</label>
+            <div className="pill-group">
+              <button
+                type="button"
+                className={`pill-tab ${activePreset === 'YTD' ? 'active' : ''}`}
+                onClick={() => setPreset('YTD')}
+              >
+                2026 YTD
+              </button>
+              <button
+                type="button"
+                className={`pill-tab ${activePreset === 'Q3' ? 'active' : ''}`}
+                onClick={() => setPreset('Q3')}
+              >
+                Q3
+              </button>
+              <button
+                type="button"
+                className={`pill-tab ${activePreset === 'L3M' ? 'active' : ''}`}
+                onClick={() => setPreset('L3M')}
+              >
+                Last 3M
+              </button>
+              <button
+                type="button"
+                className={`pill-tab ${activePreset === 'ALL' ? 'active' : ''}`}
+                onClick={() => setPreset('ALL')}
+              >
+                All 12M
+              </button>
+            </div>
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">End Date</label>
-          <input
-            type="date"
-            className="form-input"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
+          <div className="form-group">
+            <label className="form-label">Start Date</label>
+            <input
+              type="date"
+              className="form-input"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setActivePreset('CUSTOM');
+                setPage(1);
+              }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Brand</label>
-          <select
-            className="form-select"
-            value={selectedBrand}
-            onChange={(e) => {
-              setSelectedBrand(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">All Brands</option>
-            {brands.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name} ({b.category || 'Standard'})
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="form-group">
+            <label className="form-label">End Date</label>
+            <input
+              type="date"
+              className="form-input"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setActivePreset('CUSTOM');
+                setPage(1);
+              }}
+            />
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Region</label>
-          <select
-            className="form-select"
-            value={selectedRegion}
-            onChange={(e) => {
-              setSelectedRegion(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="">All Regions</option>
-            {regions.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} ({r.code})
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="form-group" style={{ minWidth: 180 }}>
+            <label className="form-label">Brand</label>
+            <select
+              className="form-select"
+              value={selectedBrand}
+              onChange={(e) => {
+                setSelectedBrand(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All Brands</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.category || 'Standard'})
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-          {(selectedBrand || selectedRegion) && (
-            <Button variant="outline" size="sm" onClick={clearAllFilters}>
-              Reset Filters
-            </Button>
-          )}
+          <div className="form-group" style={{ minWidth: 180 }}>
+            <label className="form-label">Region</label>
+            <select
+              className="form-select"
+              value={selectedRegion}
+              onChange={(e) => {
+                setSelectedRegion(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All Regions</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name} ({r.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignSelf: 'flex-end', paddingBottom: '2px' }}>
+            {(selectedBrand || selectedRegion || activePreset !== 'YTD') && (
+              <Button variant="outline" size="sm" onClick={clearAllFilters}>
+                Reset Filters
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Active Filter Chips */}
         {(selectedBrand || selectedRegion) && (
           <div className="chips-row">
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>
               Active Filters:
             </span>
             {brandObj && (

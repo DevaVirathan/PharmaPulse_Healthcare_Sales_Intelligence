@@ -1,8 +1,8 @@
 import React from 'react';
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,7 +20,6 @@ export function TrendLineChart({ data = [] }) {
     );
   }
 
-  // Format currency in compact form for Y-axis (e.g. ₹5L, ₹10L)
   const formatCompactINR = (val) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
     if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
@@ -31,22 +30,50 @@ export function TrendLineChart({ data = [] }) {
   return (
     <div style={{ width: '100%', height: 320 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
+        <AreaChart data={data} margin={{ top: 15, right: 25, left: 10, bottom: 5 }}>
+          <defs>
+            {/* Revenue Gradient Fill (Purple-to-Transparent) */}
+            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#a855f7" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#a855f7" stopOpacity={0.0} />
+            </linearGradient>
+
+            {/* Units Gradient Fill (Cyan-to-Transparent) */}
+            <linearGradient id="colorUnits" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.0} />
+            </linearGradient>
+          </defs>
+
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+          
+          <XAxis
+            dataKey="month"
+            stroke="#94a3b8"
+            fontSize={12}
+            tickLine={false}
+            axisLine={{ stroke: '#e2e8f0' }}
+          />
+          
           <YAxis
             yAxisId="left"
             tickFormatter={formatCompactINR}
-            stroke="#0284c7"
+            stroke="#9333ea"
             fontSize={12}
+            tickLine={false}
+            axisLine={false}
           />
+          
           <YAxis
             yAxisId="right"
             orientation="right"
             tickFormatter={formatNumber}
-            stroke="#10b981"
+            stroke="#06b6d4"
             fontSize={12}
+            tickLine={false}
+            axisLine={false}
           />
+          
           <Tooltip
             formatter={(value, name) => {
               if (name === 'Revenue (INR)') return [formatINR(value), name];
@@ -54,33 +81,46 @@ export function TrendLineChart({ data = [] }) {
             }}
             contentStyle={{
               backgroundColor: '#ffffff',
-              borderColor: '#e2e8f0',
-              borderRadius: '0.375rem',
-              boxShadow: 'var(--shadow-md)',
+              border: '1px solid #e2e8f0',
+              borderRadius: '0.75rem',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+              padding: '0.75rem 1rem',
+              fontWeight: 600,
             }}
           />
-          <Legend />
-          <Line
+          
+          <Legend
+            verticalAlign="top"
+            align="right"
+            iconType="circle"
+            wrapperStyle={{ paddingBottom: '1rem', fontSize: '0.8125rem', fontWeight: 600 }}
+          />
+
+          <Area
             yAxisId="left"
             type="monotone"
             dataKey="revenue"
             name="Revenue (INR)"
-            stroke="#0284c7"
-            strokeWidth={2.5}
-            dot={{ r: 3 }}
-            activeDot={{ r: 6 }}
+            stroke="#9333ea"
+            strokeWidth={3}
+            fillOpacity={1}
+            fill="url(#colorRevenue)"
+            activeDot={{ r: 6, fill: '#9333ea', stroke: '#ffffff', strokeWidth: 2 }}
           />
-          <Line
+          
+          <Area
             yAxisId="right"
             type="monotone"
             dataKey="units"
             name="Units"
-            stroke="#10b981"
-            strokeWidth={2}
+            stroke="#06b6d4"
+            strokeWidth={2.5}
             strokeDasharray="4 4"
-            dot={{ r: 2 }}
+            fillOpacity={1}
+            fill="url(#colorUnits)"
+            activeDot={{ r: 5, fill: '#06b6d4', stroke: '#ffffff', strokeWidth: 2 }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

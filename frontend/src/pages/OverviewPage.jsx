@@ -9,10 +9,13 @@ import {
   Clock,
   ArrowRight,
   RefreshCw,
-  Bell,
+  TrendingUp,
+  TrendingDown,
+  Download,
+  AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import apiClient from '../services/api';
-import MetricCard from '../components/common/MetricCard';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Spinner from '../components/common/Spinner';
@@ -24,14 +27,15 @@ import TrendLineChart from '../components/dashboard/TrendLineChart';
 import BrandBarChart from '../components/dashboard/BrandBarChart';
 import RegionBarChart from '../components/dashboard/RegionBarChart';
 import AlertDetailModal from '../components/alerts/AlertDetailModal';
-import { formatINR, formatNumber, formatPercent, formatDate, formatDateTime } from '../utils/formatters';
+import { formatINR, formatINRCompact, formatNumber, formatPercent, formatDate, formatMonthYear, formatDateTime } from '../utils/formatters';
 
 export function OverviewPage() {
   const navigate = useNavigate();
 
-  // Date range state (defaulting to whole year 2026)
+  // Date range state
   const [startDate, setStartDate] = useState('2026-01-01');
   const [endDate, setEndDate] = useState('2026-10-31');
+  const [activePreset, setActivePreset] = useState('YTD');
 
   // Data states
   const [summary, setSummary] = useState(null);
@@ -90,7 +94,6 @@ export function OverviewPage() {
 
   const handleAlertStatusUpdated = async (alertId, newStatus) => {
     await apiClient.updateAlertStatus(alertId, newStatus);
-    // Refresh alerts and modal item
     const updatedAlertRes = await apiClient.getAlertDetail(alertId);
     setSelectedAlert(updatedAlertRes.data);
     const alertsRes = await apiClient.getAlerts({ severity: 'HIGH', page: 1, page_size: 5 });
@@ -98,6 +101,7 @@ export function OverviewPage() {
   };
 
   const setPreset = (preset) => {
+    setActivePreset(preset);
     switch (preset) {
       case 'YTD':
         setStartDate('2026-01-01');
@@ -122,123 +126,230 @@ export function OverviewPage() {
 
   return (
     <div>
-      {/* Top Controls: Filter bar + Last import info */}
-      <div className="filter-bar" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-            <Calendar size={16} />
-            <span>Date Window:</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      {/* Modern Filter & Controls Bar */}
+      <div className="filter-bar-modern">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+          {/* Date Picker Pill Group */}
+          <div className="date-pill-input">
+            <Calendar size={15} color="#64748b" />
             <input
               type="date"
-              className="form-input"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setActivePreset('CUSTOM');
+              }}
+              title="Start Date"
             />
-            <span style={{ color: 'var(--color-text-muted)' }}>to</span>
+            <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600 }}>TO</span>
             <input
               type="date"
-              className="form-input"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setActivePreset('CUSTOM');
+              }}
+              title="End Date"
             />
           </div>
 
-          {/* Quick presets */}
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
-            <Button size="sm" variant="outline" onClick={() => setPreset('YTD')}>
+          {/* Quick preset tabs inspired by modern UI */}
+          <div className="pill-group">
+            <button
+              className={`pill-tab ${activePreset === 'YTD' ? 'active' : ''}`}
+              onClick={() => setPreset('YTD')}
+            >
               2026 YTD
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setPreset('Q3')}>
+            </button>
+            <button
+              className={`pill-tab ${activePreset === 'Q3' ? 'active' : ''}`}
+              onClick={() => setPreset('Q3')}
+            >
               Q3 2026
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setPreset('L3M')}>
+            </button>
+            <button
+              className={`pill-tab ${activePreset === 'L3M' ? 'active' : ''}`}
+              onClick={() => setPreset('L3M')}
+            >
               Last 3M
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setPreset('ALL')}>
+            </button>
+            <button
+              className={`pill-tab ${activePreset === 'ALL' ? 'active' : ''}`}
+              onClick={() => setPreset('ALL')}
+            >
               All 12M
-            </Button>
+            </button>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {lastImportTime && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-              <Clock size={14} />
-              <span>Last Data Import: <strong>{formatDateTime(lastImportTime)}</strong></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
+              <Clock size={13} color="#94a3b8" />
+              <span>Imported: <strong>{formatDateTime(lastImportTime)}</strong></span>
             </div>
           )}
-          <Button variant="outline" size="sm" icon={RefreshCw} onClick={fetchOverviewData}>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={RefreshCw}
+            onClick={fetchOverviewData}
+          >
             Refresh
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <Spinner label="Calculating aggregate metrics..." />
+        <Spinner label="Loading executive dashboard..." />
       ) : error ? (
         <ErrorState message={error} onRetry={fetchOverviewData} />
       ) : (
         <>
-          {/* KPI Summary Cards */}
-          <div className="kpi-grid">
-            <MetricCard
-              title="Total Sales Revenue"
-              value={formatINR(summary?.total_revenue)}
-              change={summary?.revenue_change_pct}
-              changeLabel="vs previous period"
-              icon={IndianRupee}
-            />
-            <MetricCard
-              title="Total Units Sold"
-              value={formatNumber(summary?.total_units)}
-              icon={Package}
-            />
-            <MetricCard
-              title="Active Brands"
-              value={summary?.brand_count || 0}
-              icon={Layers}
-            />
-            <MetricCard
-              title="Active Regions"
-              value={summary?.region_count || 0}
-              icon={MapPin}
-            />
+          {/* "Today's Sales" / Sales Summary Container with 4 Vibrant Gradient Stat Cards */}
+          <div className="sales-summary-container">
+            <div className="sales-summary-header">
+              <div>
+                <h2 className="sales-summary-title">Sales Performance</h2>
+                <p className="sales-summary-subtitle">
+                  Aggregated commercial metrics for {formatDate(startDate)} – {formatDate(endDate)}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Download}
+                onClick={() => navigate('/analytics')}
+              >
+                Detailed Analytics
+              </Button>
+            </div>
+
+            <div className="stat-cards-grid">
+              {/* Card 1: Purple-Pink Gradient (Total Revenue) */}
+              <div className="stat-card-gradient stat-card-purple">
+                <div className="stat-card-top">
+                  <div>
+                    <div className="stat-card-value" title={formatINR(summary?.total_revenue)}>
+                      {formatINRCompact(summary?.total_revenue)}
+                    </div>
+                    <div className="stat-card-sub-value" title="Exact Total Sales Revenue">
+                      {formatINR(summary?.total_revenue)}
+                    </div>
+                  </div>
+                  <div className="stat-card-icon-pill">
+                    <IndianRupee size={22} />
+                  </div>
+                </div>
+                <div className="stat-card-bottom">
+                  <div className="stat-card-label">Total Sales Revenue</div>
+                  <div className="stat-card-subtext">
+                    {summary?.revenue_change_pct !== null && summary?.revenue_change_pct !== undefined ? (
+                      summary.revenue_change_pct >= 0 ? (
+                        <>
+                          <TrendingUp size={14} />
+                          <span>{formatPercent(summary.revenue_change_pct)} vs prior period</span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingDown size={14} />
+                          <span>{formatPercent(summary.revenue_change_pct)} vs prior period</span>
+                        </>
+                      )
+                    ) : (
+                      <span>Baseline comparison</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Cyan-Blue Gradient (Total Units) */}
+              <div className="stat-card-gradient stat-card-cyan">
+                <div className="stat-card-top">
+                  <div className="stat-card-value">
+                    {formatNumber(summary?.total_units)}
+                  </div>
+                  <div className="stat-card-icon-pill">
+                    <Package size={22} />
+                  </div>
+                </div>
+                <div className="stat-card-bottom">
+                  <div className="stat-card-label">Total Volume (Units)</div>
+                  <div className="stat-card-subtext">
+                    <span>Aggregated units across all brands</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Orange-Amber Gradient (Active Brands) */}
+              <div className="stat-card-gradient stat-card-orange">
+                <div className="stat-card-top">
+                  <div className="stat-card-value">
+                    {summary?.brand_count || 0}
+                  </div>
+                  <div className="stat-card-icon-pill">
+                    <Layers size={22} />
+                  </div>
+                </div>
+                <div className="stat-card-bottom">
+                  <div className="stat-card-label">Active Therapeutic Brands</div>
+                  <div className="stat-card-subtext">
+                    <span>Cardio, Neuro, Metabolic, Oncology, etc.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Emerald-Teal Gradient (Active Regions) */}
+              <div className="stat-card-gradient stat-card-emerald">
+                <div className="stat-card-top">
+                  <div className="stat-card-value">
+                    {summary?.region_count || 0}
+                  </div>
+                  <div className="stat-card-icon-pill">
+                    <MapPin size={22} />
+                  </div>
+                </div>
+                <div className="stat-card-bottom">
+                  <div className="stat-card-label">Commercial Territories</div>
+                  <div className="stat-card-subtext">
+                    <span>Chennai, Coimbatore, Madurai, Trichy</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Monthly Trend Chart */}
-          <div style={{ marginBottom: '1.75rem' }}>
+          {/* Monthly Trend Area Chart (Smooth Curved Multi-Stop Splines) */}
+          <div style={{ marginBottom: '2rem' }}>
             <Card
-              title="Monthly Sales & Units Trend"
-              subtitle={`Aggregated sales from ${formatDate(startDate)} to ${formatDate(endDate)}`}
+              title="Sales & Volume Trajectory"
+              subtitle={`Monthly aggregated revenue curve & unit volume from ${formatDate(startDate)} to ${formatDate(endDate)}`}
             >
               <TrendLineChart data={trend} />
             </Card>
           </div>
 
-          {/* Brand & Region Comparisons */}
+          {/* Brand & Regional Performance Bar Charts Side-by-Side */}
           <div className="charts-grid">
             <Card
-              title="Revenue by Brand"
-              subtitle="Brand distribution in selected window"
+              title="Brand Performance"
+              subtitle="Revenue breakdown by pharmaceutical brand"
             >
               <BrandBarChart data={brandPerf} />
             </Card>
 
             <Card
-              title="Revenue by Region"
-              subtitle="Regional distribution in selected window"
+              title="Territory Performance"
+              subtitle="Revenue breakdown across geographical sales regions"
             >
               <RegionBarChart data={regionPerf} />
             </Card>
           </div>
 
-          {/* Recent High-Priority Alerts */}
+          {/* Recent High-Priority Alerts (Styled like Top Products in reference design) */}
           <Card
-            title="Recent High-Priority Anomaly Alerts"
-            subtitle="Signals requiring management review (High Severity)"
+            title="High-Priority Anomaly Signals"
+            subtitle="Flagged month-over-month variances requiring commercial investigation"
             action={
               <Button
                 variant="outline"
@@ -252,38 +363,64 @@ export function OverviewPage() {
           >
             {recentAlerts.length === 0 ? (
               <EmptyState
-                icon={Bell}
+                icon={Sparkles}
                 title="No high-priority alerts"
-                description="No critical decline anomalies currently active."
+                description="No critical decline anomalies currently active in the selected window."
               />
             ) : (
               <Table
+                className="table-container-fit"
                 headers={[
-                  { label: 'Brand' },
-                  { label: 'Region' },
-                  { label: 'Period' },
-                  { label: 'Baseline', align: 'right' },
-                  { label: 'Current', align: 'right' },
-                  { label: 'Change', align: 'right' },
-                  { label: 'Severity' },
-                  { label: 'Status' },
-                  { label: 'Action', align: 'center' },
+                  { label: 'Brand', width: '18%' },
+                  { label: 'Region', width: '12%' },
+                  { label: 'Period', width: '10%' },
+                  { label: 'Baseline', align: 'right', width: '13%' },
+                  { label: 'Current', align: 'right', width: '13%' },
+                  { label: 'Variance', align: 'right', width: '10%' },
+                  { label: 'Severity', width: '10%' },
+                  { label: 'Status', width: '10%' },
+                  { label: 'Action', align: 'center', width: '4%' },
                 ]}
               >
                 {recentAlerts.map((alert) => (
                   <tr key={alert.id}>
-                    <td><strong>{alert.brand_name}</strong></td>
-                    <td>{alert.region_name}</td>
-                    <td style={{ fontSize: '0.8125rem' }}>
-                      {formatDate(alert.period_start)} – {formatDate(alert.period_end)}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: '50%',
+                            backgroundColor: '#f5f3ff',
+                            color: '#7c3aed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {alert.brand_name.substring(0, 1)}
+                        </div>
+                        <strong>{alert.brand_name}</strong>
+                      </div>
                     </td>
-                    <td className="text-right">{formatINR(alert.previous_value)}</td>
-                    <td className="text-right">{formatINR(alert.current_value)}</td>
+                    <td>{alert.region_name}</td>
+                    <td style={{ fontSize: '0.8125rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                      {formatMonthYear(alert.period_end)}
+                    </td>
+                    <td className="text-right" style={{ color: '#64748b' }}>
+                      {formatINR(alert.previous_value)}
+                    </td>
+                    <td className="text-right" style={{ fontWeight: 700 }}>
+                      {formatINR(alert.current_value)}
+                    </td>
                     <td
                       className="text-right"
                       style={{
-                        fontWeight: 600,
-                        color: alert.change_pct < 0 ? '#991b1b' : '#065f46',
+                        fontWeight: 700,
+                        color: alert.change_pct < 0 ? '#dc2626' : '#059669',
                       }}
                     >
                       {formatPercent(alert.change_pct)}
@@ -297,7 +434,7 @@ export function OverviewPage() {
                     <td className="text-center">
                       <Button
                         size="sm"
-                        variant="secondary"
+                        variant="primary"
                         onClick={() => setSelectedAlert(alert)}
                       >
                         Inspect
@@ -311,7 +448,7 @@ export function OverviewPage() {
         </>
       )}
 
-      {/* Alert Inspection Modal */}
+      {/* Alert Inspection & Transition Modal */}
       {selectedAlert && (
         <AlertDetailModal
           alert={selectedAlert}
