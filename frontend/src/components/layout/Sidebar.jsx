@@ -52,7 +52,7 @@ export function Sidebar({ mobileOpen, onCloseMobile }) {
         <p style={{ fontWeight: 600, color: '#94a3b8', marginBottom: '0.25rem' }}>
           PharmaPulse v0.1.0
         </p>
-        <p>PostgreSQL • FastAPI • React</p>
+        {/* <p>PostgreSQL • FastAPI • React</p> */}
       </div>
     </aside>
   );

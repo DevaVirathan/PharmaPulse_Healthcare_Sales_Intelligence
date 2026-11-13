@@ -29,7 +29,9 @@ This repository currently contains the **full-stack application** checkpoint (bu
 | T13 — Upload Data page | ✅ Complete | Drag-and-drop CSV upload, contract guidance, upload progress, partial acceptance results, 409 duplicate handling |
 | T14 — Alerts management page | ✅ Complete | Summary count cards, status/severity filters, detail inspection modal with factual explanations, status transition controls, interactive "Run Detection" modal |
 | T15 — Import History page | ✅ Complete | Ingestion logs table, row counts, validation error detail modal with 100-error truncation note |
-| T16+ — Quality & E2E review | ⏸ Next phase | Full end-to-end integration flow and security review |
+| T16 — End-to-end integration | ✅ Complete | Clean DB → migrate → seed → upload CSV → analytics → detection → alert status updates automated E2E test |
+| T17 — Testing & security review | ✅ Complete | 115 passing Pytest tests, no secret leaks, no stack trace leaks, synthetic data verification, audit report in `docs/` |
+| T18 — Documentation & demo | ✅ Complete | Full documentation, PowerShell setup walkthrough, and 5-minute demo script in `docs/demo-script.md` |
 
 **Exposed API in this checkpoint**
 
@@ -62,21 +64,31 @@ PharmaPulse_Healthcare_Sales_Intelligence/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py
-│   │   ├── api/v1/                 # health + master data + imports + analytics are wired
+│   │   ├── api/v1/                 # health, master data, imports, analytics, alerts wired
 │   │   ├── core/                   # config + logging
 │   │   ├── database/               # engine, session, declarative base
 │   │   ├── models/                 # full schema (T03)
-│   │   ├── schemas/                # master data, import, analytics schemas wired
-│   │   ├── services/               # master data, import, analytics services wired
-│   │   ├── repositories/           # sales aggregation queries wired
+│   │   ├── schemas/                # request/response Pydantic models
+│   │   ├── services/               # business logic (import, analytics, anomaly, alert)
+│   │   ├── repositories/           # SQLAlchemy queries (sales, alert)
 │   │   └── utils/                  # CSV parsing + date/money helpers
 │   ├── alembic/                    # migration environment + initial migration
 │   ├── scripts/                    # seed + synthetic-data generator (T04)
-│   ├── tests/                      # T01–T06 tests
+│   ├── tests/                      # T01–T16 tests (115 Pytest tests)
 │   ├── .env.example
 │   ├── alembic.ini
 │   ├── pytest.ini
 │   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── components/             # layout, common UI, dashboard charts, alert modals
+│   │   ├── pages/                  # Overview, Analytics, Upload, Alerts, Import History
+│   │   ├── services/               # Axios API client
+│   │   ├── hooks/                  # Master data hooks
+│   │   └── utils/                  # Formatters (INR, %, dates)
+│   ├── package.json
+│   ├── vite.config.js
+│   └── index.html
 ├── DataSet/                        # raw reference CSVs (not used by the app)
 ├── Plan_Docs/                      # product plan and agent build pack
 ├── sample-data/                    # generated synthetic CSV (T04)
@@ -84,7 +96,10 @@ PharmaPulse_Healthcare_Sales_Intelligence/
 │   ├── architecture.md
 │   ├── database-setup.md
 │   ├── sample-data.md
-│   └── api-specification.md
+│   ├── api-specification.md
+│   ├── analytics-audit-report.md
+│   ├── testing-and-security-review.md
+│   └── demo-script.md
 ├── .gitignore
 └── README.md
 ```
@@ -428,43 +443,39 @@ Full metric definitions and examples are in [`docs/api-specification.md`](docs/a
 
 ---
 
-## 10. Run the tests
+## 11. Run the tests
 
 ```powershell
 cd backend
 .\.venv\Scripts\Activate.ps1
-python -m pytest
+pytest -v
 ```
 
-Expected: `45 passed`.
+Expected: `115 passed` across the complete test suite.
 
-T01–T05 tests cover:
+The test suite covers:
 
-- health payload
-- root API/docs pointers
-- readiness success
-- readiness `503` without leaking details
-- `DB_*` fields building a URL with a special-character password
-- `DATABASE_URL` override precedence
-- blank `DATABASE_URL` falling back to `DB_*` fields
-- brands/regions endpoints and `active_only`
-- seed idempotency and default thresholds
-- negative quantity/revenue rejection
-- duplicate alert fingerprint rejection
-- generator reproducibility (identical bytes across two runs)
-- committed sample matching the generator output
-- sample CSV satisfying the ingestion contract (240 accepted, 0 rejected)
-- seeded decline/growth events and non-seeded pairs staying within ±10%
-- valid CSV import, persistence, and import detail/history
-- the committed 240-row sample importing as `COMPLETED`
-- missing headers, empty/header-only files, non-UTF-8 and non-CSV input
-- invalid dates, negative values, non-integer and overflowing quantities
-- unknown brand/region rejection without auto-creating master data
-- mixed valid/invalid partial acceptance
-- duplicate upload → 409 with the original import ID
-- unexpected failure → rollback, generic 500, no leaked internals
-- size and row limits, and the 100-row error cap
-- name/date/number normalization and extra-column ignoring
+- **Foundation (T01–T03):** Health payload, root pointers, database readiness, generic 503 on DB disconnect, credential safety, seed idempotency, CHECK constraints (negative revenue/quantities, unique alert fingerprints).
+- **Synthetic Data (T04):** Deterministic generator reproducibility (identical SHA-256), exact CSV schema contract, mathematical seeded events (-38% and -26% declines, +48% and +34% growths).
+- **CSV Ingestion (T05):** Transactional persistence, partial acceptance (`COMPLETED_WITH_ERRORS`), duplicate upload rejection (409 Conflict), row error capping (first 100 errors), file size limits, header validation, unknown brand/region rejection.
+- **Analytics (T06–T07):** Dashboard summary KPIs, month-bucketed sales trends, brand and regional performance aggregations, day-window previous period calculations, zero baseline handling, paginated sales transaction queries.
+- **Anomaly Detection (T08):** Calendar-month MoM evaluation, decline alerts (HIGH), growth alerts (MEDIUM), normal change silence, zero/low baseline skipping, duplicate prevention on repeat runs, OPEN alert value refreshing, non-OPEN alert preservation, factual explanation formatting, and acceptance test on sample dataset.
+- **Alert Management (T09):** Alert listing with multi-parameter filtering (status, severity, brand, region, date range), pagination, full detail view with thresholds, status transitions (`OPEN` → `INVESTIGATING` → `RESOLVED` → `DISMISSED`), summary counters.
+- **End-to-End Integration (T16):** Complete automated full-lifecycle test from clean database to seeded alerts and duplicate blocking.
+
+Full security and QA findings: [`docs/testing-and-security-review.md`](docs/testing-and-security-review.md).
+
+---
+
+## 12. Five-Minute POC Demo Walkthrough
+
+A structured five-minute demonstration walkthrough script is available in [`docs/demo-script.md`](docs/demo-script.md):
+
+1. **Minute 1 – Problem:** Overview of fragmented sales review across commercial territories.
+2. **Minute 2 – Upload:** Drag-and-drop CSV upload, validation, partial acceptance, and 409 duplicate blocking.
+3. **Minute 3 – Analytics:** Executive overview KPI cards, interactive date presets, sales trends, and brand/region breakdowns.
+4. **Minute 4 – Detection:** Execute anomaly detection for `2026-10`; inspect seeded decline alert for Cardioval in Chennai.
+5. **Minute 5 – Value:** Transition alert status to `INVESTIGATING`; emphasize explainable non-diagnostic signals and next steps.
 
 ---
 
